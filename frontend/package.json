@@ -1,0 +1,61 @@
+{
+  "name": "test1",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --fix"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.8.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "echarts": "^5.6.0",
+    "element-plus": "^2.9.6",
+    "esbuild": "^0.25.0",
+    "lucide-react": "^0.483.0",
+    "pinia": "^3.0.1",
+    "pinia-plugin-persistedstate": "^4.2.0",
+    "sortablejs": "^1.15.6",
+    "tailwind-merge": "^3.0.2",
+    "tailwindcss-animate": "^1.0.7",
+    "three": "^0.121.0",
+    "vanta": "^0.5.24",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vue3-markdown-it": "^1.0.10"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.20.1",
+    "eslint-plugin-vue": "^9.32.0",
+    "less": "^4.2.2",
+    "postcss": "^8.5.3",
+    "sass-embedded": "^1.85.1",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.1.0",
+    "vite-plugin-vue-devtools": "^7.7.2"
+  },
+  "description": "This template should help get you started developing with Vue 3 in Vite.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Seal-Re/Stroke-Training-Platform-Front-End.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Seal-Re/Stroke-Training-Platform-Front-End/issues"
+  },
+  "homepage": "https://github.com/Seal-Re/Stroke-Training-Platform-Front-End#readme"
+}
