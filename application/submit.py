@@ -24,7 +24,6 @@ def submit_answers():
             "score": score,
             "date": date,
         }
-        print(submission)
         # 保存数据到save集合
         save_data = deliver_score_collection.find_one({"username": user})
         if save_data:
