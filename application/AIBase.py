@@ -1,2 +1,4 @@
-api_key = "sk-9955b1dd98104518b3577a420fd3a2d2"
-base_url = "https://api.deepseek.com"
+import os
+
+api_key = os.getenv("DEEPSEEK_API_KEY", "")
+base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
