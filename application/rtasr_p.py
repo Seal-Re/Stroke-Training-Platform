@@ -424,5 +424,5 @@ def stop_recognition():
         result = asr.stop() 
         return result 
     else: 
-        print("没有正在进行的识别任务") 
+        logging.warning("没有正在进行的识别任务") 
         return None
