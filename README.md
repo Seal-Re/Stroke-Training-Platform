@@ -1,8 +1,10 @@
-# Stroke-Training-Platform-Back-End · AI Stroke Rehabilitation Backend
+# Stroke-Training-Platform · AI Stroke Rehabilitation (Full-Stack Monorepo)
 
-> **A Flask backend for stroke patient rehabilitation — AI-generated training exercises, real-time ASR voice input, edge-TTS guidance, video processing, and doctor-patient pairing.**
+> **Full-stack monorepo: Flask backend (AI exercises, ASR, TTS, video) + Vue 3 frontend (dual-role patient/doctor UI).**
 >
-> 脑卒中康复训练平台后端：AI 生成个性化训练题目、实时 ASR 语音识别、edge-TTS 语音引导、ffmpeg 视频处理、医患配对管理。
+> 全栈 Monorepo：Flask 后端（AI 训练题目生成、实时 ASR、edge-TTS、ffmpeg）+ Vue 3 前端（患者/医生双角色）。
+
+**Monorepo layout:** `./` = Python backend · `frontend/` = Vue 3 frontend
 
 [English](#english) · [中文](#中文)
 
