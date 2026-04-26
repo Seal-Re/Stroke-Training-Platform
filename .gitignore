@@ -1,0 +1,31 @@
+# Secrets
+.env
+*.env
+.secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+*.log
+error.log
+
+# Runtime data
+RecordingData/
+data/*.db
+
+# FFmpeg binary (too large for git)
+ffmpeg-master-latest-win64-gpl/
+ffmpeg*/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
