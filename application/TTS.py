@@ -1,7 +1,10 @@
-from flask import Blueprint, request, send_from_directory
+import logging
 import os
 import re
-from .base import SERVER_HOST  
+import subprocess
+
+from flask import Blueprint, request, send_from_directory
+from .base import SERVER_HOST
 
 audio_bp = Blueprint('audio', __name__)
 
@@ -22,68 +25,58 @@ voiceMap = {
     "yunjhe": "zh-TW-YunJheNeural",
 }
 
+
 def getVoiceById(voiceId):
     return voiceMap.get(voiceId)
 
+
 def remove_html(string):
-    regex = re.compile(r'<[^>]+>')
-    cleaned = regex.sub('', string)
-    return cleaned
+    return re.sub(r'<[^>]+>', '', string)
+
 
 def createAudio(text, file_name, voiceId):
     new_text = remove_html(text)
-    print(f"Text without html tags: {new_text}")
     voice = getVoiceById(voiceId)
     if not voice:
         return "error params"
 
-    pwdPath = os.getcwd()
-    filePath = os.path.join(pwdPath, "tts", file_name)
-    relativePath = f"/tts/{file_name}"
-    dirPath = os.path.dirname(filePath)
-    if not os.path.exists(dirPath):
-        os.makedirs(dirPath)
-    if not os.path.exists(filePath):
-        open(filePath, 'a').close()
+    file_path = os.path.join(os.getcwd(), "tts", file_name)
+    relative_path = f"/tts/{file_name}"
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     try:
-        script = [
-            'edge-tts',
-            '--voice', voice,
-            '--text', new_text,
-            '--write-media', filePath
-        ]
-        import subprocess
-        subprocess.run(script, check=True)
-        url = f'{SERVER_HOST}{relativePath}' 
-        return url
+        subprocess.run(
+            ['edge-tts', '--voice', voice, '--text', new_text, '--write-media', file_path],
+            check=True
+        )
+        return f'{SERVER_HOST}{relative_path}'
     except subprocess.CalledProcessError as e:
-        import logging
         logging.error(f"创建音频失败: {e}")
         return "创建音频失败"
     except Exception as e:
-        import logging
         logging.error(f"处理音频时发生其他错误: {e}")
         return "处理音频时发生错误"
 
+
 def getParameter(request, paramName):
-    if request.args.__contains__(paramName):
-        return request.args[paramName]
-    return ""
+    return request.args.get(paramName, "")
+
 
 @audio_bp.route('/dealAudio', methods=['POST', 'GET'])
 def dealAudio():
-    text = getParameter(request, 'text')
-    file_name = getParameter(request, 'file_name')
-    voice = getParameter(request, 'voice')
-    return createAudio(text, file_name, voice)
+    return createAudio(
+        getParameter(request, 'text'),
+        getParameter(request, 'file_name'),
+        getParameter(request, 'voice')
+    )
+
 
 @audio_bp.route('/static/<path:filename>')
 def serve_static(filename):
     from flask import current_app
     return send_from_directory(current_app.static_folder, filename)
 
+
 @audio_bp.route('/tts/<path:filename>')
 def serve_tts(filename):
-    tts_dir = os.path.join(os.getcwd(), 'tts')
-    return send_from_directory(tts_dir, filename)
+    return send_from_directory(os.path.join(os.getcwd(), 'tts'), filename)

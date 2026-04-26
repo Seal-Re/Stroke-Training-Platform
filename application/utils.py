@@ -1,4 +1,5 @@
 import logging
+import bcrypt
 from pymongo import MongoClient
 
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -56,8 +57,9 @@ def register_user(username, password):
             logging.debug(f"User {username} already exists")
             return False
         
-        # 插入新用户数据
-        user_data = {"username": username, "password": password}
+        # 插入新用户数据（密码用 bcrypt 哈希存储）
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        user_data = {"username": username, "password": hashed}
         users_collection.insert_one(user_data)
         logging.debug(f"User {username} registered successfully")
         
