@@ -1,8 +1,8 @@
-# Stroke-Training-Platform-Back-End · AI Stroke Rehabilitation Backend
+# Stroke-Training-Platform · AI Stroke Rehabilitation Full-Stack
 
-> **A Flask backend for stroke patient rehabilitation — AI-generated training exercises, real-time ASR voice input, edge-TTS guidance, video processing, and doctor-patient pairing.**
+> **Full-stack platform for stroke patient rehabilitation — Flask backend (AI exercises, real-time ASR, edge-TTS, video processing, doctor-patient pairing) + Vue 3 frontend in `frontend/`.**
 >
-> 脑卒中康复训练平台后端：AI 生成个性化训练题目、实时 ASR 语音识别、edge-TTS 语音引导、ffmpeg 视频处理、医患配对管理。
+> 脑卒中康复训练平台（前后端一体化）：Flask 后端 + Vue 3 前端 (`frontend/`)，AI 生成个性化训练题目、实时 ASR 语音识别、edge-TTS 语音引导、ffmpeg 视频处理、医患配对管理。
 
 [English](#english) · [中文](#中文)
 
@@ -45,9 +45,13 @@ flowchart LR
 ## Quickstart
 
 ```bash
+# Backend
 pip install -r requirement.txt
 cp .env.example .env  # fill OPENAI_API_KEY, MONGODB_URI
 python run.py
+
+# Frontend (Vue 3)
+cd frontend && npm install && npm run dev
 ```
 
 > Note: `ffmpeg` must be installed and on PATH. On Windows the bundled `ffmpeg-master-latest-win64-gpl/` can be used.
