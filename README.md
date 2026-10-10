@@ -1,135 +1,58 @@
-# Stroke-Training-Platform · AI Stroke Rehabilitation Full-Stack
+# Stroke-Training-Platform
 
-> **Full-stack platform for stroke patient rehabilitation — Flask backend (AI exercises, real-time ASR, edge-TTS, video processing, doctor-patient pairing) + Vue 3 frontend in `frontend/`.**
->
-> 脑卒中康复训练平台（前后端一体化）：Flask 后端 + Vue 3 前端 (`frontend/`)，AI 生成个性化训练题目、实时 ASR 语音识别、edge-TTS 语音引导、ffmpeg 视频处理、医患配对管理。
+Flask backend and Vue 3 frontend for a stroke rehabilitation training platform: patients take cognitive assessment and training exercises, doctors pair with patients and review their scores, and an LLM turns a patient's results into a new set of personalized exercises and written advice.
 
-[English](#english) · [中文](#中文)
+## Context
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.x-000000?logo=flask)
-![OpenAI](https://img.shields.io/badge/LLM-OpenAI_Compatible-412991?logo=openai)
-![ASR](https://img.shields.io/badge/ASR-Real--time-orange)
-![TTS](https://img.shields.io/badge/TTS-edge--tts-0078D7)
-![FFmpeg](https://img.shields.io/badge/Video-FFmpeg-007808)
-![License](https://img.shields.io/badge/License-MIT-blue)
+Course project on stroke ("脑卒中") rehabilitation training. Backend in `application/`, frontend in `frontend/`. In-app content, prompts and question data are Chinese.
 
----
+## Features
 
-<a id="english"></a>
+- Registration and login (bcrypt passwords, with a legacy unsalted-MD5 verification path in `application/login.py`), user and doctor profiles.
+- Assessment and training question flows across five domains — acalculia (`失算症`), thought disorder, attention, perceptual and memory training — with score submission and per-user score history (`/api/submit`, `/api/submitTrain`, `/api/deliverScoreData_train`, `/api/getLastScore`).
+- Doctor tooling: list patients, pair or unpair a doctor with a patient (`/api/doctorpair`), view per-patient scores and detail, and edit the AI advice shown to a patient (`/api/ai_doctor_tips`).
+- AI-generated exercises: `GET /api/aiTrain` reads the patient's latest advice and asks the LLM for 20 questions (multiple choice `model=0`, fill-in-the-blank `model=1`) as JSON, then stores them per user.
+- AI assessment: `GET /api/AI` collects the patient's training scores and the previous advice and asks the LLM for a follow-up analysis, appended to the patient's advice history.
+- Text-to-speech: `GET /dealAudio` synthesizes speech to an MP3 with the edge-tts CLI, using one of 14 mapped zh-CN / zh-HK / zh-TW voices.
+- Speech recognition, two implementations:
+  - iFlytek (讯飞) real-time ASR (`application/rtasr_p.py`, `application/asr_bp.py`). The server captures audio from its own microphone with PyAudio and streams it to iFlytek over WebSocket. Clients drive it through REST session endpoints: `/asr/start`, `/asr/stop`, `/asr/status`, `/asr/get_current_transcription`, `/asr/active_sessions`, `/asr/connection_status`; at most 5 concurrent sessions, sessions expire after 300 s.
+  - Local OpenAI Whisper (`application/ten.py`, `application/wapp.py`). Audio is uploaded to `/api/receiveRecordingDataTest`, buffered for the session, and transcribed offline with `whisper.load_model` (size `base`, CUDA when available).
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Patient["Patient App"] -->|HTTP / WebSocket| Flask
-    Doctor["Doctor Portal"] -->|HTTP| Flask
+- `run.py` calls `application/__init__.py:create_app()`. 22 blueprints are assembled in `application/routes.py`, exposing 33 routes.
+- MongoDB through pymongo (`application/utils.py`), 10 collections: `users`, `questions`, `questions_train`, `save`, `deliver_score`, `deliver_score_train`, `images`, `aiTips`, `userinfo`, `doctor_patient`.
+- LLM calls use the `openai` Python SDK pointed at DeepSeek (`https://api.deepseek.com`), model `deepseek-chat`.
+- Frontend: Vue 3 + Vite with Pinia, Element Plus, Tailwind, ECharts; one app with separate patient and doctor views (`frontend/src/views/`), dev proxy to `http://localhost:5000`.
 
-    subgraph Flask["Flask App"]
-        aiTrain["aiTrain_bp\n(AI training exercises)"]
-        aiTips["aiTips_bp\n(AI assessment tips)"]
-        asr["asr_bp\n(real-time ASR)"]
-        aiapi["aiapi_bp\n(general LLM)"]
-        deliver["deliverScore_bp\n(score submission)"]
-        doctorPair["DoctorPair_bp\n(pairing)"]
-        crypt["crypt\n(auth)"]
-    end
+## Getting started
 
-    aiTrain & aiTips & aiapi --> LLM["LLM API\n(OpenAI-compatible)"]
-    asr --> ASREngine["Real-time ASR\n(RealTimeASR)"]
-    Flask --> TTS["edge-tts\n(voice guidance)"]
-    Flask --> FFmpeg["FFmpeg\n(video processing)"]
-    Flask --> MongoDB[("MongoDB\n(patients, scores, tips)")]
-```
-
-## Quickstart
+Backend:
 
 ```bash
-# Backend
 pip install -r requirement.txt
-cp .env.example .env  # fill OPENAI_API_KEY, MONGODB_URI
-python run.py
-
-# Frontend (Vue 3)
-cd frontend && npm install && npm run dev
+# env vars used: DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL (default https://api.deepseek.com),
+#               SECRET_KEY, FLASK_DEBUG (default false)
+python run.py        # serves http://127.0.0.1:5000
 ```
 
-> Note: `ffmpeg` must be installed and on PATH. On Windows the bundled `ffmpeg-master-latest-win64-gpl/` can be used.
+MongoDB is expected at `mongodb://127.0.0.1:27017` (hard-coded in `application/utils.py`). The `edge-tts` executable must be on PATH, since TTS is invoked as a subprocess.
 
-## Key APIs
+Frontend:
 
-| Blueprint | Endpoint | Description |
-|---|---|---|
-| `aiTrain_bp` | `GET /api/aiTrain` | Generate personalized exercises from latest AI tips |
-| `aiTips_bp` | `POST /api/aiTips` | Submit rehab session → AI assessment |
-| `asr_bp` | `WS /api/asr` | Real-time speech recognition stream |
-| `deliverScore_bp` | `POST /api/deliverScore` | Submit exercise score |
-| `DoctorPair_bp` | `POST /api/pair` | Doctor-patient pairing |
-
-## Technical Highlights
-
-<details>
-<summary><b>LLM-generated personalized rehabilitation exercises</b></summary>
-
-- **S**: Generic rehabilitation exercises ignore individual patient deficits identified from their assessment; one-size-fits-all training is less effective.
-- **A**: `aiTrain_bp` fetches the patient's latest AI-assessed tips from MongoDB, injects them into a structured system prompt that instructs the LLM (OpenAI-compatible) to generate 20 targeted exercises (multiple-choice + fill-in-the-blank) as a JSON array. Output is parsed and returned directly.
-- **R**: Every training session is personalized to the patient's current deficit profile; content updates automatically as assessments evolve.
-</details>
-
-<details>
-<summary><b>Real-time ASR for voice-guided rehabilitation</b></summary>
-
-- **S**: Stroke patients often have motor impairments that make typing difficult; voice is the natural input modality for rehabilitation exercises.
-- **A**: `asr_bp` exposes a streaming ASR endpoint backed by `RealTimeASR` (讯飞 / compatible engine). Speech is transcribed in real time over WebSocket, enabling voice-answering of training exercises without client-side speech processing.
-- **R**: Hands-free interaction mode; patients can complete exercises verbally.
-</details>
-
-<details>
-<summary><b>ASR → LLM → TTS multimodal pipeline</b></summary>
-
-- **S**: A rehabilitation session needs to feel like interacting with a real therapist: hear a question, speak an answer, hear feedback.
-- **A**: Patient voice → `asr_bp` transcribes → `aiapi_bp` sends to LLM → response text → `edge-tts` synthesizes audio → played back to patient. `ffmpeg`/`moviepy` handle audio format conversion.
-- **R**: Full voice loop: speech in, speech out, zero manual typing required.
-</details>
-
-## Repo Layout
-
-```
-application/
-├── aiTrain.py          LLM personalized exercise generation
-├── aiTips.py           AI assessment + tips storage
-├── aiapi.py            general LLM chat endpoint
-├── asr_bp.py           real-time ASR (WebSocket)
-├── deliverScore.py     score submission
-├── DoctorPair.py       doctor-patient pairing
-├── DoctorPatientInfo.py patient records
-├── AIBase.py           OpenAI-compatible LLM wrapper
-├── base.py             MongoDB connection
-└── config.py           env-based config
-run.py                  Flask entry point
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-## Roadmap
+## Status and limitations
 
-- [x] AI-generated personalized training exercises
-- [x] Real-time ASR voice input
-- [x] edge-TTS voice guidance
-- [x] Doctor-patient pairing and score delivery
-- [x] Video processing with FFmpeg
-- [ ] Progress trend charts (per patient over time)
-- [ ] Push notifications to doctor portal on milestone
-- [ ] Offline exercise mode (cached exercises)
+- The Flask app exposes no WebSocket endpoint; ASR is driven by REST polling. No video or FFmpeg processing is implemented, despite `moviepy`/FFmpeg appearing in the dependency dump.
+- `requirement.txt` is a full `pip freeze` of the development machine (UTF-16 encoded, ~330 unrelated entries including torch, PyQt5, pyautogui), not a curated dependency list.
+- `application/base.py` contains a hard-coded server host, and the iFlytek credentials live in `application/rtasr_p.py`; both should be environment variables.
+- `application/__pycache__/*.pyc`, `tts/test.mp3` and several `*.vue.bak` files are committed.
 
----
+## Contributors / License
 
-<a id="中文"></a>
-
-## 中文速读
-
-- **是什么**：脑卒中康复训练平台后端，Flask 蓝图架构，AI 生成个性化训练题目（LLM JSON 输出）、实时 ASR 语音识别、edge-TTS 语音引导、医患配对管理。
-- **亮点**：ASR → LLM → TTS 完整语音闭环，患者语音作答无需打字；`aiTrain_bp` 将最新 AI 评估注入 prompt 生成个性化 20 题。
-- **运行**：`pip install -r requirement.txt && python run.py`，需安装 ffmpeg。
-
-## License
-
-MIT © [Seal-Re](https://github.com/Seal-Re)
+MIT — see `LICENSE`. Only Seal-Re has commits.
